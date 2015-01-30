@@ -1,5 +1,3 @@
-package mazewar;
-
 import java.io.ObjectOutputStream;
 
 public class MazeWarBcastThread extends Thread{

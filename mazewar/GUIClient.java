@@ -19,6 +19,9 @@ USA.
 
 import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
 
 /**
  * An implementation of {@link LocalClient} that is controlled by the keyboard
@@ -29,11 +32,25 @@ import java.awt.event.KeyEvent;
 
 public class GUIClient extends LocalClient implements KeyListener {
 
+        private Socket comm;
+        private ObjectOutputStream out;
+        private int playerId = (int)(Math.random() * 32000);
         /**
+         *
+         *
          * Create a GUI controlled {@link LocalClient}.  
          */
-        public GUIClient(String name) {
-                super(name);
+        public GUIClient(String name, Socket comm) {
+            super(name);
+            this.comm = comm;
+            try {
+                out = new ObjectOutputStream(comm.getOutputStream());
+                MazeWarPkt p = new MazeWarPkt(MazeWarPkt.MAZEWAR_SPAWN, playerId, name);
+                out.writeObject(p);
+            }
+            catch (IOException err){
+                System.out.println("Exception occurred");
+            }
         }
         
         /**
@@ -41,42 +58,60 @@ public class GUIClient extends LocalClient implements KeyListener {
          * @param e The {@link KeyEvent} that occurred.
          */
         public void keyPressed(KeyEvent e) {
-                // If the user pressed Q, invoke the cleanup code and quit. 
+                // If the user pressed Q, invoke the cleanup code and quit.
+            try{
                 if((e.getKeyChar() == 'q') || (e.getKeyChar() == 'Q')) {
                         //Mazewar.quit();
-                	
-                	//send a MazeWarPkt with MAZEWAR_QUIT
-                	
+                    out = new ObjectOutputStream(comm.getOutputStream());
+                    MazeWarPkt p = new MazeWarPkt(MazeWarPkt.MAZEWAR_QUIT, playerId, this.getName());
+                    out.writeObject(p);
+
+                    //send a MazeWarPkt with MAZEWAR_QUIT
+
                 // Up-arrow moves forward.
                 } else if(e.getKeyCode() == KeyEvent.VK_UP) {
                         //forward();
-                	
-                	//send a MazeWarPkt to the server with MAZEWAR_FORWARD
-                	
+                    out = new ObjectOutputStream(comm.getOutputStream());
+                    MazeWarPkt p = new MazeWarPkt(MazeWarPkt.MAZEWAR_FORWARD, playerId, this.getName());
+                    out.writeObject(p);
+                    //send a MazeWarPkt to the server with MAZEWAR_FORWARD
+
                 // Down-arrow moves backward.
                 } else if(e.getKeyCode() == KeyEvent.VK_DOWN) {
                         //backup();
-                        
-                	//send a MazeWarPkt to the server with MAZEWAR_BACKWARD    
+                    out = new ObjectOutputStream(comm.getOutputStream());
+                    MazeWarPkt p = new MazeWarPkt(MazeWarPkt.MAZEWAR_BACKWARD, playerId, this.getName());
+                    out.writeObject(p);
+                    //send a MazeWarPkt to the server with MAZEWAR_BACKWARD
                         
                 // Left-arrow turns left.
                 } else if(e.getKeyCode() == KeyEvent.VK_LEFT) {
                         //turnLeft();
-                	
-                	//send a MazeWarPkt to the server with MAZEWAR_LEFT
-                	
+                    out = new ObjectOutputStream(comm.getOutputStream());
+                    MazeWarPkt p = new MazeWarPkt(MazeWarPkt.MAZEWAR_LEFT, playerId, this.getName());
+                    out.writeObject(p);
+                    //send a MazeWarPkt to the server with MAZEWAR_LEFT
+
                 // Right-arrow turns right.
                 } else if(e.getKeyCode() == KeyEvent.VK_RIGHT) {
                         //turnRight();
-                	
-                	//send a MazeWarPkt to the server with MAZEWAR_RIGHT
-                	
+                    out = new ObjectOutputStream(comm.getOutputStream());
+                    MazeWarPkt p = new MazeWarPkt(MazeWarPkt.MAZEWAR_RIGHT, playerId, this.getName());
+                    out.writeObject(p);
+                    //send a MazeWarPkt to the server with MAZEWAR_RIGHT
+
                 // Spacebar fires.
                 } else if(e.getKeyCode() == KeyEvent.VK_SPACE) {
                         //fire();
-                	
-                	//send a MazeWarPkt to the server with MAZEWAR_FIRE
+                    out = new ObjectOutputStream(comm.getOutputStream());
+                    MazeWarPkt p = new MazeWarPkt(MazeWarPkt.MAZEWAR_FIRE, playerId, this.getName());
+                    out.writeObject(p);
+                    //send a MazeWarPkt to the server with MAZEWAR_FIRE
                 }
+            }
+            catch (IOException err) {
+                System.out.println("Exception occurred");
+            }
         }
         
         /**

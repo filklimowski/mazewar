@@ -1,5 +1,3 @@
-package mazewar;
-
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.LinkedList;
@@ -8,11 +6,11 @@ import java.util.Queue;
 public class MazeWarServer {
 	
 	public static Queue<MazeWarPkt> eventQ = new LinkedList<MazeWarPkt>();
-	
+
 	public static void main(String[] args) throws IOException {
 		
-		
-		
+
+
 		//Error checking
 		//Declare Data Structures
 		

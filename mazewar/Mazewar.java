@@ -26,7 +26,10 @@ import javax.swing.JOptionPane;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import javax.swing.BorderFactory;
+import java.io.IOException;
 import java.io.Serializable;
+import java.net.Socket;
+import java.net.UnknownHostException;
 
 /**
  * The entry point and glue code for the game.  It also contains some helpful
@@ -141,9 +144,16 @@ public class Mazewar extends JFrame {
                 
                 // You may want to put your network initialization code somewhere in
                 // here.
-                
+
+                Socket comm = null;
+                try {
+                    comm = new Socket("localhost", 10000);
+                }
+                catch (IOException err) {
+                    System.out.println("Exception occurred");
+                }
                 // Create the GUIClient and connect it to the KeyListener queue
-                guiClient = new GUIClient(name);
+                guiClient = new GUIClient(name, comm);
                 maze.addClient(guiClient);
                 this.addKeyListener(guiClient);
                 
