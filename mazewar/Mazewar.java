@@ -144,6 +144,8 @@ public class Mazewar extends JFrame {
                 
                 // You may want to put your network initialization code somewhere in
                 // here.
+                
+                MazeWarServer server = new MazeWarServer(10000);
 
                 Socket comm = null;
                 try {
