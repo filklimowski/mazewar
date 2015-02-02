@@ -122,7 +122,7 @@ public class Mazewar extends JFrame {
         /** 
          * The place where all the pieces are put together. 
          */
-        public Mazewar() {
+        public Mazewar(int port) {
                 super("ECE419 Mazewar");
                 consolePrintLn("ECE419 Mazewar started!");
                 
@@ -145,11 +145,11 @@ public class Mazewar extends JFrame {
                 // You may want to put your network initialization code somewhere in
                 // here.
                 
-                MazeWarServer server = new MazeWarServer(10000);
+                MazeWarServer server = new MazeWarServer(port);
 
                 Socket comm = null;
                 try {
-                    comm = new Socket("localhost", 10000);
+                    comm = new Socket("localhost", port);
                 }
                 catch (IOException err) {
                     System.out.println("Exception occurred");
@@ -235,7 +235,16 @@ public class Mazewar extends JFrame {
          */
         public static void main(String args[]) {
 
-                /* Create the GUI */
-                new Mazewar();
+		int port=9999;
+		
+		if(args.length == 1) {
+			port = Integer.parseInt(args[0]);
+		} else {
+			System.err.println("ERROR: Invalid arguments!");
+			System.exit(-1);
+		}           
+
+		/* Create the GUI */
+                new Mazewar(port);
         }
 }

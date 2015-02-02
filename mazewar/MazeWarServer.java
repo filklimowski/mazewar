@@ -1,5 +1,3 @@
-package mazewar;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -38,6 +36,8 @@ public class MazeWarServer {
                 while(true){
                     try{
                         Socket s = serverSocket.accept();
+			System.out.println("Accepted connection\n");
+			
                         clientList.add(new ConnectionToClient(s));
                     }
                     catch(IOException e){ e.printStackTrace(); }
@@ -64,53 +64,39 @@ public class MazeWarServer {
 
         messageHandling.setDaemon(true);
         messageHandling.start();
-    };
-    
-		/*
-		while(listening) {
-			//listens and enqueues
-			MazeWarThread client = new MazeWarThread(serverSocket.accept());
-			client.start();
-			clients.add(client);
-		}*/
-		
-		try {
-			serverSocket.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
+    };	
+}
 
     private class ConnectionToClient {
-        ObjectInputStream in;
-        ObjectOutputStream out;
-        Socket socket;
+
+	private Socket socket = null;
+	private ObjectInputStream fromClient = null;
+	private ObjectOutputStream toClient = null;
 
         ConnectionToClient(Socket socket) throws IOException {
-            this.socket = socket;
-            in = new ObjectInputStream(socket.getInputStream());
-            out = new ObjectOutputStream(socket.getOutputStream());
+            	this.socket = socket;
+		this.fromClient = new ObjectInputStream(socket.getInputStream());
+		/* stream to write back to client */
+		this.toClient = new ObjectOutputStream(socket.getOutputStream());
 
             Thread read = new Thread(){
                 public void run(){
                     while(true){
                         try{
-                            MazeWarPkt fromClient;
-							try {
-								fromClient = (MazeWarPkt) in.readObject();
-								eventQ.put(fromClient);
-								System.out.println("Received and Enqueued " + fromClient.event + " from Player: " + fromClient.player);
-							} catch (ClassNotFoundException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							} catch (InterruptedException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-                            
-                        }
-                        catch(IOException e){ e.printStackTrace(); }
+				MazeWarPkt packetFromClient = (MazeWarPkt) fromClient.readObject();
+				eventQ.put(packetFromClient);
+				System.out.println("Received and Enqueued " + 
+				packetFromClient.event + " from Player: " + packetFromClient.player);
+
+			} catch (ClassNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch(IOException e){ 
+				e.printStackTrace(); 
+			}
                     }
                 }
             };
@@ -121,7 +107,8 @@ public class MazeWarServer {
 
         public void write(MazeWarPkt eventPkt) {
             try{
-                out.writeObject(eventPkt);
+                toClient.writeObject(eventPkt);
+		System.out.println("Sent back to client\n");
             }
             catch(IOException e){ e.printStackTrace(); }
         }

@@ -43,8 +43,10 @@ public class GUIClient extends LocalClient implements KeyListener {
         public GUIClient(String name, Socket comm) {
             super(name);
             this.comm = comm;
+	    
             try {
-                out = new ObjectOutputStream(comm.getOutputStream());
+                //out = new ObjectOutputStream(comm.getOutputStream());
+		this.out = new ObjectOutputStream(comm.getOutputStream());
                 MazeWarPkt p = new MazeWarPkt(MazeWarPkt.MAZEWAR_SPAWN, playerId, name);
                 out.writeObject(p);
             }
@@ -62,7 +64,7 @@ public class GUIClient extends LocalClient implements KeyListener {
             try{
                 if((e.getKeyChar() == 'q') || (e.getKeyChar() == 'Q')) {
                         //Mazewar.quit();
-                    out = new ObjectOutputStream(comm.getOutputStream());
+                    //out = new ObjectOutputStream(comm.getOutputStream());
                     MazeWarPkt p = new MazeWarPkt(MazeWarPkt.MAZEWAR_QUIT, playerId, this.getName());
                     out.writeObject(p);
 
@@ -71,7 +73,7 @@ public class GUIClient extends LocalClient implements KeyListener {
                 // Up-arrow moves forward.
                 } else if(e.getKeyCode() == KeyEvent.VK_UP) {
                         //forward();
-                    out = new ObjectOutputStream(comm.getOutputStream());
+                    //out = new ObjectOutputStream(comm.getOutputStream());
                     MazeWarPkt p = new MazeWarPkt(MazeWarPkt.MAZEWAR_FORWARD, playerId, this.getName());
                     out.writeObject(p);
                     //send a MazeWarPkt to the server with MAZEWAR_FORWARD
@@ -79,7 +81,7 @@ public class GUIClient extends LocalClient implements KeyListener {
                 // Down-arrow moves backward.
                 } else if(e.getKeyCode() == KeyEvent.VK_DOWN) {
                         //backup();
-                    out = new ObjectOutputStream(comm.getOutputStream());
+                    //out = new ObjectOutputStream(comm.getOutputStream());
                     MazeWarPkt p = new MazeWarPkt(MazeWarPkt.MAZEWAR_BACKWARD, playerId, this.getName());
                     out.writeObject(p);
                     //send a MazeWarPkt to the server with MAZEWAR_BACKWARD
@@ -87,7 +89,7 @@ public class GUIClient extends LocalClient implements KeyListener {
                 // Left-arrow turns left.
                 } else if(e.getKeyCode() == KeyEvent.VK_LEFT) {
                         //turnLeft();
-                    out = new ObjectOutputStream(comm.getOutputStream());
+                    //out = new ObjectOutputStream(comm.getOutputStream());
                     MazeWarPkt p = new MazeWarPkt(MazeWarPkt.MAZEWAR_LEFT, playerId, this.getName());
                     out.writeObject(p);
                     //send a MazeWarPkt to the server with MAZEWAR_LEFT
@@ -95,7 +97,7 @@ public class GUIClient extends LocalClient implements KeyListener {
                 // Right-arrow turns right.
                 } else if(e.getKeyCode() == KeyEvent.VK_RIGHT) {
                         //turnRight();
-                    out = new ObjectOutputStream(comm.getOutputStream());
+                    //out = new ObjectOutputStream(comm.getOutputStream());
                     MazeWarPkt p = new MazeWarPkt(MazeWarPkt.MAZEWAR_RIGHT, playerId, this.getName());
                     out.writeObject(p);
                     //send a MazeWarPkt to the server with MAZEWAR_RIGHT
@@ -103,7 +105,7 @@ public class GUIClient extends LocalClient implements KeyListener {
                 // Spacebar fires.
                 } else if(e.getKeyCode() == KeyEvent.VK_SPACE) {
                         //fire();
-                    out = new ObjectOutputStream(comm.getOutputStream());
+                    //out = new ObjectOutputStream(comm.getOutputStream());
                     MazeWarPkt p = new MazeWarPkt(MazeWarPkt.MAZEWAR_FIRE, playerId, this.getName());
                     out.writeObject(p);
                     //send a MazeWarPkt to the server with MAZEWAR_FIRE
