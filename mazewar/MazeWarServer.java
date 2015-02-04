@@ -15,7 +15,7 @@ public class MazeWarServer {
 	private ArrayList<ConnectionToClient> clientList;
 	private ServerSocket serverSocket;
 
-	public MazeWarServer(int port) { {
+	public MazeWarServer(int port) {
 		
 		//Error checking?
 		
@@ -33,15 +33,15 @@ public class MazeWarServer {
             public void run(){
             	MazeWarPkt tickPkt = new MazeWarPkt(200, -1, "Server");
             	while(true) {
-            		eventQ.put(tickPkt);
                 	try{
-                		Thread.sleep(200);
+                        eventQ.put(tickPkt);
+                        Thread.sleep(200);
                 	}
                 	catch (InterruptedException e) {
                 		e.printStackTrace();
                 	}
             	}
-            }
+              }
 		};
 		
 		missileTick.setDaemon(true);
@@ -81,8 +81,7 @@ public class MazeWarServer {
 
         broadcastMessages.setDaemon(true);
         broadcastMessages.start();
-    };	
-}
+    }
 
     private class ConnectionToClient {
 
@@ -138,6 +137,21 @@ public class MazeWarServer {
     public void sendToAll(MazeWarPkt eventPkt){
         for(ConnectionToClient client : clientList)
             client.write(eventPkt);
+    }
+
+    public static void main(String args[]) {
+
+        int port = 4444;
+
+        if(args.length == 1 ) {
+            port = Integer.parseInt(args[0]);
+        } else {
+            System.err.println("ERROR: Invalid arguments!");
+            System.exit(-1);
+        }
+
+		/* Create the GUI */
+        new MazeWarServer(port);
     }
 
 }
