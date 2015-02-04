@@ -122,7 +122,7 @@ public class Mazewar extends JFrame {
         /** 
          * The place where all the pieces are put together. 
          */
-        public Mazewar(int port) {
+        public Mazewar(String hostname, int port) {
                 super("ECE419 Mazewar");
                 consolePrintLn("ECE419 Mazewar started!");
                 
@@ -144,12 +144,10 @@ public class Mazewar extends JFrame {
                 
                 // You may want to put your network initialization code somewhere in
                 // here.
-                
-                MazeWarServer server = new MazeWarServer(port);
 
                 Socket comm = null;
                 try {
-                    comm = new Socket("localhost", port);
+                    comm = new Socket(hostname, port);
                 }
                 catch (IOException err) {
                     System.out.println("Exception occurred");
@@ -161,6 +159,8 @@ public class Mazewar extends JFrame {
                 
                 // Use braces to force constructors not to be called at the beginning of the
                 // constructor.
+                
+                //no robots in lab2
                 {
                         maze.addClient(new RobotClient("Norby"));
                         maze.addClient(new RobotClient("Robbie"));
@@ -235,16 +235,18 @@ public class Mazewar extends JFrame {
          */
         public static void main(String args[]) {
 
-		int port=9999;
+		String hostname = "localhost";
+		int port = 4444;
 		
-		if(args.length == 1) {
-			port = Integer.parseInt(args[0]);
+		if(args.length == 2 ) {
+			hostname = args[0];
+			port = Integer.parseInt(args[1]);
 		} else {
 			System.err.println("ERROR: Invalid arguments!");
 			System.exit(-1);
-		}           
+		}         
 
 		/* Create the GUI */
-                new Mazewar(port);
+                new Mazewar(hostname, port);
         }
 }

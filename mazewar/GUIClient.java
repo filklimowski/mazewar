@@ -17,11 +17,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307,
 USA.
 */
 
-import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * An implementation of {@link LocalClient} that is controlled by the keyboard
@@ -34,6 +36,8 @@ public class GUIClient extends LocalClient implements KeyListener {
 
         private Socket comm;
         private ObjectOutputStream out;
+        private ObjectInputStream in;
+        private LinkedBlockingQueue<MazeWarPkt> eventQ;
         private int playerId = (int)(Math.random() * 32000);
         /**
          *
@@ -45,14 +49,75 @@ public class GUIClient extends LocalClient implements KeyListener {
             this.comm = comm;
 	    
             try {
-                //out = new ObjectOutputStream(comm.getOutputStream());
-		this.out = new ObjectOutputStream(comm.getOutputStream());
+            	this.out = new ObjectOutputStream(comm.getOutputStream());
+            	this.in = new ObjectInputStream(comm.getInputStream());
                 MazeWarPkt p = new MazeWarPkt(MazeWarPkt.MAZEWAR_SPAWN, playerId, name);
                 out.writeObject(p);
             }
             catch (IOException err){
                 System.out.println("Exception occurred");
             }
+            
+            //start a new thread to read in broadcast messages from the server
+            Thread read = new Thread(){
+                public void run(){
+                    while(true){
+                        try{
+				MazeWarPkt packetFromServer = (MazeWarPkt) in.readObject();
+				eventQ.put(packetFromServer);
+				System.out.println("Received from Server: " + 
+				packetFromServer.event + " from Player: " + packetFromServer.player);
+
+			} catch (ClassNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch(IOException e){ 
+				e.printStackTrace(); 
+			}
+                    }
+                }
+            };
+
+            read.setDaemon(true); // terminate when main ends
+            read.start();
+            
+            //another thread to process the head of the queue
+            Thread processEvent = new Thread() {
+                public void run(){
+                    while(true){
+                        try{
+                            MazeWarPkt eventPkt = eventQ.take();
+                            //based on the event, do this action
+                            System.out.println("Processing: " + eventPkt.event + " from Player: " + eventPkt.player);
+                            
+                            if (eventPkt.event == MazeWarPkt.MAZEWAR_FORWARD) {
+                            	forward();
+                            }
+                            else if (eventPkt.event == MazeWarPkt.MAZEWAR_BACKWARD) {
+                            	backup();
+                            }
+                            else if (eventPkt.event == MazeWarPkt.MAZEWAR_LEFT) {
+                            	turnLeft();
+                            }
+                            else if (eventPkt.event == MazeWarPkt.MAZEWAR_RIGHT) {
+                            	turnRight();
+                            }
+                            else if (eventPkt.event == MazeWarPkt.MAZEWAR_FIRE) {
+                            	fire();
+                            }
+                            
+                            
+                        }
+                        catch(InterruptedException e){ }
+                    }
+                }
+            };
+
+            processEvent.setDaemon(true);
+            processEvent.start();
         }
         
         /**

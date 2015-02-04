@@ -29,14 +29,31 @@ public class MazeWarServer {
 		}
 		
 		//boolean listening = true;
-		//new MazeWarBcastThread().start();
+		Thread missileTick = new Thread() {
+            public void run(){
+            	MazeWarPkt tickPkt = new MazeWarPkt(200, -1, "Server");
+            	while(true) {
+            		eventQ.put(tickPkt);
+                	try{
+                		Thread.sleep(200);
+                	}
+                	catch (InterruptedException e) {
+                		e.printStackTrace();
+                	}
+            	}
+            }
+		};
+		
+		missileTick.setDaemon(true);
+        missileTick.start();
+            	
 		
 		Thread accept = new Thread() {
             public void run(){
                 while(true){
                     try{
                         Socket s = serverSocket.accept();
-			System.out.println("Accepted connection\n");
+                        System.out.println("Accepted connection\n");
 			
                         clientList.add(new ConnectionToClient(s));
                     }
@@ -48,7 +65,7 @@ public class MazeWarServer {
         accept.setDaemon(true);
         accept.start();
 
-        Thread messageHandling = new Thread() {
+        Thread broadcastMessages = new Thread() {
             public void run(){
                 while(true){
                     try{
@@ -62,8 +79,8 @@ public class MazeWarServer {
             }
         };
 
-        messageHandling.setDaemon(true);
-        messageHandling.start();
+        broadcastMessages.setDaemon(true);
+        broadcastMessages.start();
     };	
 }
 

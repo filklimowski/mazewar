@@ -10,6 +10,7 @@ public class MazeWarPkt implements Serializable {
 	public static final int MAZEWAR_FIRE = 105;
 	public static final int MAZEWAR_QUIT     = 199;
     public static final int MAZEWAR_SPAWN = 100;
+    public static final int MAZEWAR_TICK = 200;
 	
 	/* error codes */
 	
