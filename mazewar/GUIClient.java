@@ -122,10 +122,15 @@ public class GUIClient extends LocalClient implements KeyListener {
                                 }
                                 else if (eventPkt.event == MazeWarPkt.MAZEWAR_COORDINATES) {
                                     for (OpponentClient opponent : opponentList)
-                                        if (opponent.playerId == eventPkt.player)
+                                        if (opponent.playerId == eventPkt.player && !opponent.added) {
+                                            opponent.added = true;
                                             maze.addClient(opponent, eventPkt.spawnX, eventPkt.spawnY, eventPkt.spawnD);
+                                        }
                                 }
-                                    findRemoteClient(eventPkt);
+                                else if (eventPkt.event == MazeWarPkt.MAZEWAR_CLIENT_LIST) {
+                                    sendCoordinates();
+                                }
+                                findRemoteClient(eventPkt);
                             }
                             
                             
@@ -149,6 +154,10 @@ public class GUIClient extends LocalClient implements KeyListener {
             catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+
+        public void reqOpponents() {
+            MazeWarPkt p = new MazeWarPkt(MazeWarPkt.MAZEWAR_CLIENT_LIST, playerId, this.getName());
         }
 
         public void findRemoteClient(MazeWarPkt packet) {
