@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -39,14 +40,17 @@ public class GUIClient extends LocalClient implements KeyListener {
         private ObjectInputStream in;
         private LinkedBlockingQueue<MazeWarPkt> eventQ;
         private int playerId = (int)(Math.random() * 32000);
+
+        private ArrayList<OpponentClient> opponentList = new ArrayList<OpponentClient>();
         /**
          *
          *
          * Create a GUI controlled {@link LocalClient}.  
          */
-        public GUIClient(String name, Socket comm) {
+        public GUIClient(String name, Socket comm, final Maze maze) {
             super(name);
             this.comm = comm;
+            this.eventQ = new LinkedBlockingQueue<MazeWarPkt>();
 	    
             try {
             	this.out = new ObjectOutputStream(comm.getOutputStream());
@@ -81,7 +85,6 @@ public class GUIClient extends LocalClient implements KeyListener {
                 }
             };
 
-            read.setDaemon(true); // terminate when main ends
             read.start();
             
             //another thread to process the head of the queue
@@ -90,36 +93,86 @@ public class GUIClient extends LocalClient implements KeyListener {
                     while(true){
                         try{
                             MazeWarPkt eventPkt = eventQ.take();
-                            //based on the event, do this action
-                            System.out.println("Processing: " + eventPkt.event + " from Player: " + eventPkt.player);
-                            
-                            if (eventPkt.event == MazeWarPkt.MAZEWAR_FORWARD) {
-                            	forward();
+
+                            if (eventPkt.player == playerId) {
+
+                                //based on the event, do this action
+                                System.out.println("Processing: " + eventPkt.event + " from Player: " + eventPkt.player);
+
+                                if (eventPkt.event == MazeWarPkt.MAZEWAR_FORWARD) {
+                                    forward();
+                                }
+                                else if (eventPkt.event == MazeWarPkt.MAZEWAR_BACKWARD) {
+                                    backup();
+                                }
+                                else if (eventPkt.event == MazeWarPkt.MAZEWAR_LEFT) {
+                                    turnLeft();
+                                }
+                                else if (eventPkt.event == MazeWarPkt.MAZEWAR_RIGHT) {
+                                    turnRight();
+                                }
+                                else if (eventPkt.event == MazeWarPkt.MAZEWAR_FIRE) {
+                                    fire();
+                                }
                             }
-                            else if (eventPkt.event == MazeWarPkt.MAZEWAR_BACKWARD) {
-                            	backup();
-                            }
-                            else if (eventPkt.event == MazeWarPkt.MAZEWAR_LEFT) {
-                            	turnLeft();
-                            }
-                            else if (eventPkt.event == MazeWarPkt.MAZEWAR_RIGHT) {
-                            	turnRight();
-                            }
-                            else if (eventPkt.event == MazeWarPkt.MAZEWAR_FIRE) {
-                            	fire();
+                            else {
+                                if (eventPkt.event == MazeWarPkt.MAZEWAR_SPAWN) {
+                                    OpponentClient opp = new OpponentClient(eventPkt.playerName, eventPkt.player);
+                                    opponentList.add(opp);
+                                }
+                                else if (eventPkt.event == MazeWarPkt.MAZEWAR_COORDINATES) {
+                                    for (OpponentClient opponent : opponentList)
+                                        if (opponent.playerId == eventPkt.player)
+                                            maze.addClient(opponent, eventPkt.spawnX, eventPkt.spawnY);
+                                }
+                                    findRemoteClient(eventPkt);
                             }
                             
                             
                         }
-                        catch(InterruptedException e){ }
+                        catch(InterruptedException e){
+                            e.printStackTrace();
+                        }
                     }
                 }
             };
 
-            processEvent.setDaemon(true);
             processEvent.start();
         }
-        
+
+        public void sendCoordinates() {
+            MazeWarPkt p = new MazeWarPkt(MazeWarPkt.MAZEWAR_COORDINATES, playerId, this.getName(),
+                    this.getPoint().getX(), this.getPoint().getY());
+            try {
+                out.writeObject(p);
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        public void findRemoteClient(MazeWarPkt packet) {
+            for (OpponentClient opponent : opponentList) {
+                if (opponent.playerId == packet.player) {
+                    if (packet.event == MazeWarPkt.MAZEWAR_FORWARD) {
+                        opponent.forward();
+                    }
+                    else if (packet.event == MazeWarPkt.MAZEWAR_BACKWARD) {
+                        opponent.backup();
+                    }
+                    else if (packet.event == MazeWarPkt.MAZEWAR_LEFT) {
+                        opponent.turnLeft();
+                    }
+                    else if (packet.event == MazeWarPkt.MAZEWAR_RIGHT) {
+                        opponent.turnRight();
+                    }
+                    else if (packet.event == MazeWarPkt.MAZEWAR_FIRE) {
+                        opponent.fire();
+                    }
+                }
+            }
+        }
+
         /**
          * Handle a key press.
          * @param e The {@link KeyEvent} that occurred.

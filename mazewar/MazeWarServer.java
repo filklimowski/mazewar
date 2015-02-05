@@ -18,7 +18,7 @@ public class MazeWarServer {
 	public MazeWarServer(int port) {
 		
 		//Error checking?
-		
+
 		clientList = new ArrayList<ConnectionToClient>();
         eventQ = new LinkedBlockingQueue<MazeWarPkt>();
 		try {
@@ -29,7 +29,7 @@ public class MazeWarServer {
 		}
 		
 		//boolean listening = true;
-		Thread missileTick = new Thread() {
+		/*Thread missileTick = new Thread() {
             public void run(){
             	MazeWarPkt tickPkt = new MazeWarPkt(200, -1, "Server");
             	while(true) {
@@ -45,7 +45,7 @@ public class MazeWarServer {
 		};
 		
 		missileTick.setDaemon(true);
-        missileTick.start();
+        missileTick.start();*/
             	
 		
 		Thread accept = new Thread() {
@@ -62,7 +62,6 @@ public class MazeWarServer {
             }
         };
         
-        accept.setDaemon(true);
         accept.start();
 
         Thread broadcastMessages = new Thread() {
@@ -74,12 +73,13 @@ public class MazeWarServer {
                         sendToAll(eventPkt);
                         System.out.println("Broadcasting: " + eventPkt.event + " from Player: " + eventPkt.player);
                     }
-                    catch(InterruptedException e){ }
+                    catch(InterruptedException e){
+                        e.printStackTrace();
+                    }
                 }
             }
         };
 
-        broadcastMessages.setDaemon(true);
         broadcastMessages.start();
     }
 
@@ -91,33 +91,32 @@ public class MazeWarServer {
 
         ConnectionToClient(Socket socket) throws IOException {
             	this.socket = socket;
-		this.fromClient = new ObjectInputStream(socket.getInputStream());
-		/* stream to write back to client */
-		this.toClient = new ObjectOutputStream(socket.getOutputStream());
+		    this.fromClient = new ObjectInputStream(socket.getInputStream());
+		    /* stream to write back to client */
+		    this.toClient = new ObjectOutputStream(socket.getOutputStream());
 
             Thread read = new Thread(){
                 public void run(){
                     while(true){
                         try{
-				MazeWarPkt packetFromClient = (MazeWarPkt) fromClient.readObject();
-				eventQ.put(packetFromClient);
-				System.out.println("Received and Enqueued " + 
-				packetFromClient.event + " from Player: " + packetFromClient.player);
+                            MazeWarPkt packetFromClient = (MazeWarPkt) fromClient.readObject();
+                            eventQ.put(packetFromClient);
+                            System.out.println("Received and Enqueued " +
+                            packetFromClient.event + " from Player: " + packetFromClient.player);
 
-			} catch (ClassNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch(IOException e){ 
-				e.printStackTrace(); 
-			}
+                        } catch (ClassNotFoundException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        } catch (InterruptedException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        } catch(IOException e){
+                            e.printStackTrace();
+                        }
                     }
                 }
             };
 
-            read.setDaemon(true); // terminate when main ends
             read.start();
         }
 

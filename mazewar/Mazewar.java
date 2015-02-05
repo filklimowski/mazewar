@@ -153,20 +153,21 @@ public class Mazewar extends JFrame {
                     System.out.println("Exception occurred");
                 }
                 // Create the GUIClient and connect it to the KeyListener queue
-                guiClient = new GUIClient(name, comm);
+                guiClient = new GUIClient(name, comm, maze);
                 maze.addClient(guiClient);
+                guiClient.sendCoordinates();
                 this.addKeyListener(guiClient);
                 
                 // Use braces to force constructors not to be called at the beginning of the
                 // constructor.
                 
                 //no robots in lab2
-                {
+                /*{
                         maze.addClient(new RobotClient("Norby"));
                         maze.addClient(new RobotClient("Robbie"));
                         maze.addClient(new RobotClient("Clango"));
                         maze.addClient(new RobotClient("Marvin"));
-                }
+                }*/
 
                 
                 // Create the panel that will display the maze.
