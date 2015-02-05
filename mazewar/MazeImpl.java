@@ -206,10 +206,10 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                 addClient(client, point);
         }
 
-        public synchronized void addClient(Client client, int x, int y) {
+        public synchronized void addClient(Client client, int x, int y, Direction d) {
             assert(client != null);
             // Pick a random starting point, and check to see if it is already occupied
-            Point point = new Point(x,y);
+            DirectedPoint point = new DirectedPoint(new Point(x,y), d);
             addClient(client, point);
         }
 

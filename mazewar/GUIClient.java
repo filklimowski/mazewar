@@ -123,7 +123,7 @@ public class GUIClient extends LocalClient implements KeyListener {
                                 else if (eventPkt.event == MazeWarPkt.MAZEWAR_COORDINATES) {
                                     for (OpponentClient opponent : opponentList)
                                         if (opponent.playerId == eventPkt.player)
-                                            maze.addClient(opponent, eventPkt.spawnX, eventPkt.spawnY);
+                                            maze.addClient(opponent, eventPkt.spawnX, eventPkt.spawnY, eventPkt.spawnD);
                                 }
                                     findRemoteClient(eventPkt);
                             }
@@ -142,7 +142,7 @@ public class GUIClient extends LocalClient implements KeyListener {
 
         public void sendCoordinates() {
             MazeWarPkt p = new MazeWarPkt(MazeWarPkt.MAZEWAR_COORDINATES, playerId, this.getName(),
-                    this.getPoint().getX(), this.getPoint().getY());
+                    this.getPoint().getX(), this.getPoint().getY(), this.getOrientation());
             try {
                 out.writeObject(p);
             }
