@@ -85,10 +85,7 @@ public class MazeWarServer {
                         			requestingClient = i;
                         		}
                         	}
-                        	if(!clientListPkt.clientList.isEmpty()) { //if empty, requester is only client.
-                        		System.out.println("ClientList has playerid: " + clientListPkt.clientList.get(0).player + "\n");
-                        		sendToOne(requestingClient, clientListPkt);
-                        	}
+                        	sendToOne(requestingClient, clientListPkt);
                         }
                         else {
                         	// dequeue and send to all clients

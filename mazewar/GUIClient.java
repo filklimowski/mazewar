@@ -51,6 +51,8 @@ public class GUIClient extends LocalClient implements KeyListener {
             super(name);
             this.comm = comm;
             this.eventQ = new LinkedBlockingQueue<MazeWarPkt>();
+            
+            final GUIClient thisClient = this;
 	    
             try {
             	this.out = new ObjectOutputStream(comm.getOutputStream());
@@ -103,8 +105,19 @@ public class GUIClient extends LocalClient implements KeyListener {
                                     //receiving ArrayList<ClientInfo> clientList;
                                 	//clientList contains all clients other than you, with their id,name,x,y,direction
                                 	//should do maze.addclient(opponent, x,y, dir) as given in the packet.clientList 
-                                	//to add all existing opponents, then do maze.addclient(myself) AFTER so the spawn  
+                                	//to add all existing opponents
+                                	
+                                	for(ClientInfo client : eventPkt.clientList) {
+                                		OpponentClient opp = new OpponentClient(client.playerName, client.player);
+                                		opponentList.add(opp);
+                                		opp.added = true;
+                                		maze.addClient(opp, client.spawnX, client.spawnY, client.spawnD);
+                                	}
+                                	
+                                	//do maze.addclient(myself) AFTER so the spawn  
                                 	//is indifferent location than any of the existing clients
+                                	maze.addClient(thisClient);
+                                	thisClient.sendCoordinates();
                                 }
                                 
                                 if (eventPkt.event == MazeWarPkt.MAZEWAR_FORWARD) {

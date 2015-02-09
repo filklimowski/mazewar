@@ -156,8 +156,8 @@ public class Mazewar extends JFrame {
                 guiClient = new GUIClient(name, comm, maze);
                 guiClient.reqOpponents();
                 {
-                    maze.addClient(guiClient);
-                    guiClient.sendCoordinates();
+                    //maze.addClient(guiClient);
+                    //guiClient.sendCoordinates();
                     this.addKeyListener(guiClient);
                 }
                 
