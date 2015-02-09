@@ -99,6 +99,14 @@ public class GUIClient extends LocalClient implements KeyListener {
                                 //based on the event, do this action
                                 System.out.println("Processing: " + eventPkt.event + " from Player: " + eventPkt.player);
 
+                                if (eventPkt.event == MazeWarPkt.MAZEWAR_CLIENT_LIST_RESP) {
+                                    //receiving ArrayList<ClientInfo> clientList;
+                                	//clientList contains all clients other than you, with their id,name,x,y,direction
+                                	//should do maze.addclient(opponent, x,y, dir) as given in the packet.clientList 
+                                	//to add all existing opponents, then do maze.addclient(myself) AFTER so the spawn  
+                                	//is indifferent location than any of the existing clients
+                                }
+                                
                                 if (eventPkt.event == MazeWarPkt.MAZEWAR_FORWARD) {
                                     forward();
                                 }
@@ -127,7 +135,7 @@ public class GUIClient extends LocalClient implements KeyListener {
                                             maze.addClient(opponent, eventPkt.spawnX, eventPkt.spawnY, eventPkt.spawnD);
                                         }
                                 }
-                                else if (eventPkt.event == MazeWarPkt.MAZEWAR_CLIENT_LIST) {
+                                else if (eventPkt.event == MazeWarPkt.MAZEWAR_CLIENT_LIST_REQ) {
                                     sendCoordinates();
                                 }
                                 findRemoteClient(eventPkt);
@@ -157,7 +165,13 @@ public class GUIClient extends LocalClient implements KeyListener {
         }
 
         public void reqOpponents() {
-            MazeWarPkt p = new MazeWarPkt(MazeWarPkt.MAZEWAR_CLIENT_LIST, playerId, this.getName());
+            MazeWarPkt p = new MazeWarPkt(MazeWarPkt.MAZEWAR_CLIENT_LIST_REQ, playerId, this.getName());
+            try {
+                out.writeObject(p);
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
         public void findRemoteClient(MazeWarPkt packet) {

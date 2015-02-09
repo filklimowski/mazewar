@@ -69,9 +69,32 @@ public class MazeWarServer {
                 while(true){
                     try{
                         MazeWarPkt eventPkt = eventQ.take();
-                        // dequeue and send to all clients
-                        sendToAll(eventPkt);
-                        System.out.println("Broadcasting: " + eventPkt.event + " from Player: " + eventPkt.player);
+                        
+                        if(eventPkt.event == MazeWarPkt.MAZEWAR_CLIENT_LIST_REQ) {
+                        	//send clientList
+                        	int requestingClient=-1;
+                        	MazeWarPkt clientListPkt = new MazeWarPkt(MazeWarPkt.MAZEWAR_CLIENT_LIST_RESP, eventPkt.player, eventPkt.playerName);
+                        	clientListPkt.clientList = new ArrayList<ClientInfo>();
+                        	for(int i=0; i<clientList.size(); i++) {
+                        		ConnectionToClient client = clientList.get(i);
+                        		if(client.player != eventPkt.player) { //we want to add to list all clients other than the one requesting
+                                	ClientInfo clientInfo = new ClientInfo(client.player, client.playerName, client.spawnX, client.spawnY, client.spawnD);
+                                	clientListPkt.clientList.add(clientInfo);
+                        		}
+                        		else {
+                        			requestingClient = i;
+                        		}
+                        	}
+                        	if(!clientListPkt.clientList.isEmpty()) { //if empty, requester is only client.
+                        		System.out.println("ClientList has playerid: " + clientListPkt.clientList.get(0).player + "\n");
+                        		sendToOne(requestingClient, clientListPkt);
+                        	}
+                        }
+                        else {
+                        	// dequeue and send to all clients
+                            sendToAll(eventPkt);
+                            System.out.println("Broadcasting: " + eventPkt.event + " from Player: " + eventPkt.player);
+                        }
                     }
                     catch(InterruptedException e){
                         e.printStackTrace();
@@ -88,13 +111,24 @@ public class MazeWarServer {
 	private Socket socket = null;
 	private ObjectInputStream fromClient = null;
 	private ObjectOutputStream toClient = null;
+	
+	private int player = 0;
+    private String playerName = null;
+    
+    private int spawnX = 0;
+    private int spawnY = 0;
+    private Direction spawnD = null;
+    
 
         ConnectionToClient(Socket socket) throws IOException {
-            	this.socket = socket;
+        	
+            this.socket = socket;
 		    this.fromClient = new ObjectInputStream(socket.getInputStream());
 		    /* stream to write back to client */
 		    this.toClient = new ObjectOutputStream(socket.getOutputStream());
-
+		    
+		    final ConnectionToClient thisClient = this;
+		    
             Thread read = new Thread(){
                 public void run(){
                     while(true){
@@ -103,6 +137,17 @@ public class MazeWarServer {
                             eventQ.put(packetFromClient);
                             System.out.println("Received and Enqueued " +
                             packetFromClient.event + " from Player: " + packetFromClient.player);
+                            
+                            if(packetFromClient.event == MazeWarPkt.MAZEWAR_SPAWN) {
+                            	thisClient.player = packetFromClient.player;
+                            	System.out.println("connection to client playerid is: " + thisClient.player);
+                            	thisClient.playerName = packetFromClient.playerName;
+                            }
+                            else if (packetFromClient.event == MazeWarPkt.MAZEWAR_COORDINATES) {
+                            	thisClient.spawnX = packetFromClient.spawnX;
+                            	thisClient.spawnY = packetFromClient.spawnY;
+                            	thisClient.spawnD = packetFromClient.spawnD;
+                            }
 
                         } catch (ClassNotFoundException e) {
                             // TODO Auto-generated catch block
