@@ -29,9 +29,9 @@ public class MazeWarServer {
 		}
 		
 		//boolean listening = true;
-		/*Thread missileTick = new Thread() {
+		Thread missileTick = new Thread() {
             public void run(){
-            	MazeWarPkt tickPkt = new MazeWarPkt(200, -1, "Server");
+            	MazeWarPkt tickPkt = new MazeWarPkt(MazeWarPkt.MAZEWAR_TICK, -1, "Server");
             	while(true) {
                 	try{
                         eventQ.put(tickPkt);
@@ -44,8 +44,7 @@ public class MazeWarServer {
               }
 		};
 		
-		missileTick.setDaemon(true);
-        missileTick.start();*/
+        missileTick.start();
             	
 		
 		Thread accept = new Thread() {

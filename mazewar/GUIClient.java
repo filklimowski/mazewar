@@ -95,6 +95,10 @@ public class GUIClient extends LocalClient implements KeyListener {
                     while(true){
                         try{
                             MazeWarPkt eventPkt = eventQ.take();
+                            
+                            if(eventPkt.event == MazeWarPkt.MAZEWAR_TICK) {
+                            	maze.missileTick();
+                            }
 
                             if (eventPkt.player == playerId) {
 
@@ -112,7 +116,7 @@ public class GUIClient extends LocalClient implements KeyListener {
                                 		opponentList.add(opp);
                                 		opp.added = true;
                                 		maze.addClient(opp, client.spawnX, client.spawnY, client.spawnD);
-						System.out.println("Expected opp direction: " + client.spawnD.toString());
+						
                                 	}
                                 	
                                 	//do maze.addclient(myself) AFTER so the spawn  
@@ -135,7 +139,9 @@ public class GUIClient extends LocalClient implements KeyListener {
                                     turnRight();
                                 }
                                 else if (eventPkt.event == MazeWarPkt.MAZEWAR_FIRE) {
-                                    fire();
+                                    if(fire()) {
+                                    	//killed someone. will have to get that players new coordinates
+                                    }
                                 }
                             }
                             else {
@@ -148,6 +154,11 @@ public class GUIClient extends LocalClient implements KeyListener {
                                         if (opponent.playerId == eventPkt.player && !opponent.added) {
                                             opponent.added = true;
                                             maze.addClient(opponent, eventPkt.spawnX, eventPkt.spawnY, eventPkt.spawnD);
+                                        }
+                                        else if (opponent.playerId == eventPkt.player && opponent.added) {
+                                        	//opponent already added, update coordinates
+                                        	System.out.println("Updating opponent " + eventPkt.playerName);
+                                            maze.updateClient(opponent, eventPkt.spawnX, eventPkt.spawnY, eventPkt.spawnD);
                                         }
                                 }
                                 else if (eventPkt.event == MazeWarPkt.MAZEWAR_CLIENT_LIST_REQ) {

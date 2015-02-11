@@ -60,6 +60,10 @@ public abstract class Maze {
 
     public abstract void addClient(Client client, int x, int y, Direction d);
 
+    public abstract void updateClient(Client client, int x, int y, Direction d);    
+    
+    public abstract void missileTick();
+
     /** 
      * Create a new {@link Projectile} from the specified {@link Client}
      * @param client {@link Client} that is firing.

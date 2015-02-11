@@ -54,7 +54,7 @@ public class OverheadMazePanel extends JPanel implements MazeListener {
         /**
          * Our handle to the {@link Client}.:
          */
-        private final Client client;
+        private final GUIClient client;
         
         /**
          * The wall cache.
@@ -82,7 +82,7 @@ public class OverheadMazePanel extends JPanel implements MazeListener {
          * @param maze The {@link Maze} that is to be displayed.
          * @param client The {@link Client} whose viewpoint should be considered.
          */
-        public OverheadMazePanel(Maze maze, Client client) {
+        public OverheadMazePanel(Maze maze, GUIClient client) {
                 assert(maze != null);
                 assert(client != null);
                 this.maze = maze;
@@ -250,7 +250,11 @@ public class OverheadMazePanel extends JPanel implements MazeListener {
         }
         
         public void clientKilled(Client source, Client target) {
-                // Doesn't need to do anything
+        		//only repaint my own if I was shot, and then I'll send coordinates after
+        	if(target.equals(client)) {
+        		this.repaint();
+        		client.sendCoordinates();
+        	}
         }
         
         public void clientFired(Client c) {
