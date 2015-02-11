@@ -112,12 +112,14 @@ public class GUIClient extends LocalClient implements KeyListener {
                                 		opponentList.add(opp);
                                 		opp.added = true;
                                 		maze.addClient(opp, client.spawnX, client.spawnY, client.spawnD);
+						System.out.println("Expected opp direction: " + client.spawnD.toString());
                                 	}
                                 	
                                 	//do maze.addclient(myself) AFTER so the spawn  
                                 	//is indifferent location than any of the existing clients
                                 	maze.addClient(thisClient);
                                 	thisClient.sendCoordinates();
+                                    
                                 }
                                 
                                 if (eventPkt.event == MazeWarPkt.MAZEWAR_FORWARD) {
