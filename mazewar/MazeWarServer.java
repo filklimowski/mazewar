@@ -13,37 +13,42 @@ public class MazeWarServer {
 	
 	private LinkedBlockingQueue<MazeWarPkt> eventQ;
 	private ArrayList<ConnectionToClient> clientList;
+    private ArrayList<ConnectionToPeer> peerList;
 	private ServerSocket serverSocket;
 
 	public MazeWarServer(int port) {
-		
-		//Error checking?
 
-		clientList = new ArrayList<ConnectionToClient>();
+        //Error checking?
+
+        clientList = new ArrayList<ConnectionToClient>();
+        peerList = new ArrayList<ConnectionToPeer>();
         eventQ = new LinkedBlockingQueue<MazeWarPkt>();
-		try {
-			serverSocket = new ServerSocket(port);
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		
-		//boolean listening = true;
-		Thread missileTick = new Thread() {
-            public void run(){
-            	MazeWarPkt tickPkt = new MazeWarPkt(MazeWarPkt.MAZEWAR_TICK, -1, "Server");
-            	while(true) {
-                	try{
+        try {
+            serverSocket = new ServerSocket(port);
+        } catch (IOException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        }
+        this.listen();
+
+    }
+
+    private void listen() {
+        //boolean listening = true;
+        Thread missileTick = new Thread() {
+            public void run() {
+                MazeWarPkt tickPkt = new MazeWarPkt(MazeWarPkt.MAZEWAR_TICK, -1, "Server");
+                while (true) {
+                    try {
                         eventQ.put(tickPkt);
                         Thread.sleep(200);
-                	}
-                	catch (InterruptedException e) {
-                		e.printStackTrace();
-                	}
-            	}
-              }
-		};
-		
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        };
+
         missileTick.start();
             	
 		
@@ -69,7 +74,17 @@ public class MazeWarServer {
                     try{
                         MazeWarPkt eventPkt = eventQ.take();
                         
-                        if(eventPkt.event == MazeWarPkt.MAZEWAR_CLIENT_LIST_REQ) {
+                        if(eventPkt.event == MazeWarPkt.MAZEWAR_REQ_PEERS) {
+                            MazeWarPkt peerListPkt = new MazeWarPkt(MazeWarPkt.MAZEWAR_PEER_LIST, eventPkt.player, eventPkt.playerName);
+                            peerListPkt.peerHosts = new ArrayList<String>();
+                            peerListPkt.peerPorts = new ArrayList<Integer>();
+
+                            for (ConnectionToPeer peer: peerList) {
+                                peerListPkt.peerHosts.add(peer.hostname);
+                                peerListPkt.peerPorts.add(peer.port);
+                            }
+                        }
+                        else if(eventPkt.event == MazeWarPkt.MAZEWAR_CLIENT_LIST_REQ) {
                         	//send clientList
                         	int requestingClient=-1;
                         	MazeWarPkt clientListPkt = new MazeWarPkt(MazeWarPkt.MAZEWAR_CLIENT_LIST_RESP, eventPkt.player, eventPkt.playerName);
@@ -86,6 +101,11 @@ public class MazeWarServer {
                         	}
                         	sendToOne(requestingClient, clientListPkt);
                         }
+                        else if(eventPkt.event == MazeWarPkt.MAZEWAR_PEER_LIST)
+                        {
+                            //TODO: do something
+                            System.out.println("Received Peer List");
+                        }
                         else {
                         	// dequeue and send to all clients
                             sendToAll(eventPkt);
@@ -100,6 +120,23 @@ public class MazeWarServer {
         };
 
         broadcastMessages.start();
+    }
+
+    public MazeWarServer(int port, String hostname, int port2) {
+        Socket commPeer = null;
+        ObjectOutputStream out;
+        try {
+            commPeer = new Socket(hostname, port2);
+            out = new ObjectOutputStream(commPeer.getOutputStream());
+            serverSocket = new ServerSocket(port);
+            MazeWarPkt p = new MazeWarPkt(MazeWarPkt.MAZEWAR_REQ_PEERS, -1, "Server");
+            out.writeObject(p);
+
+        }
+        catch (IOException err) {
+            System.out.println("Exception occurred");
+        }
+        listen();
     }
 
     private class ConnectionToClient {
@@ -170,6 +207,77 @@ public class MazeWarServer {
         }
     }
 
+
+    private class ConnectionToPeer {
+
+        private Socket socket = null;
+        private ObjectInputStream fromPeer = null;
+        private ObjectOutputStream toPeer = null;
+
+        private int player = 0;
+        private String playerName = null;
+
+        private int spawnX = 0;
+        private int spawnY = 0;
+        private Direction spawnD = null;
+        public String hostname;
+        public int port;
+
+
+        ConnectionToPeer(Socket socket, String hostname, int port) throws IOException {
+
+            this.socket = socket;
+            this.fromPeer = new ObjectInputStream(socket.getInputStream());
+		    /* stream to write back to client */
+            this.toPeer = new ObjectOutputStream(socket.getOutputStream());
+
+            final ConnectionToPeer thisPeer = this;
+
+            Thread read = new Thread(){
+                public void run(){
+                    while(true){
+                        try{
+                            MazeWarPkt packetFromClient = (MazeWarPkt) fromPeer.readObject();
+                            eventQ.put(packetFromClient);
+                            System.out.println("Received and Enqueued " +
+                                    packetFromClient.event + " from Player: " + packetFromClient.player);
+
+                            if(packetFromClient.event == MazeWarPkt.MAZEWAR_SPAWN) {
+                                thisPeer.player = packetFromClient.player;
+                                System.out.println("connection to client playerid is: " + thisPeer.player);
+                                thisPeer.playerName = packetFromClient.playerName;
+                            }
+                            else if (packetFromClient.event == MazeWarPkt.MAZEWAR_COORDINATES) {
+                                thisPeer.spawnX = packetFromClient.spawnX;
+                                thisPeer.spawnY = packetFromClient.spawnY;
+                                thisPeer.spawnD = packetFromClient.spawnD;
+                            }
+
+                        } catch (ClassNotFoundException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        } catch (InterruptedException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        } catch(IOException e){
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            };
+
+            read.start();
+        }
+
+        public void write(MazeWarPkt eventPkt) {
+            try{
+                toPeer.writeObject(eventPkt);
+                System.out.println("Sent back to peer\n");
+            }
+            catch(IOException e){ e.printStackTrace(); }
+        }
+    }
+
     public void sendToOne(int index, MazeWarPkt eventPkt) throws IndexOutOfBoundsException {
         clientList.get(index).write(eventPkt);
     }
@@ -182,16 +290,24 @@ public class MazeWarServer {
     public static void main(String args[]) {
 
         int port = 4444;
+        String hostname = "localhost";
+        int port2 = 4445;
 
         if(args.length == 1 ) {
             port = Integer.parseInt(args[0]);
+            new MazeWarServer(port);
+        }
+        else if (args.length == 3) {
+            port = Integer.parseInt(args[0]);
+            hostname = args[1];
+            port2 = Integer.parseInt(args[2]);
+            new MazeWarServer(port, hostname, port2);
         } else {
             System.err.println("ERROR: Invalid arguments!");
             System.exit(-1);
         }
 
 		/* Create the GUI */
-        new MazeWarServer(port);
     }
 
 }

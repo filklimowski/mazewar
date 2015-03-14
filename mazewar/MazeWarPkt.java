@@ -33,6 +33,8 @@ public class MazeWarPkt implements Serializable {
     public static final int MAZEWAR_COORDINATES = 121;
     public static final int MAZEWAR_CLIENT_LIST_REQ = 122;
     public static final int MAZEWAR_CLIENT_LIST_RESP = 123;
+    public static final int MAZEWAR_REQ_PEERS = 140;
+    public static final int MAZEWAR_PEER_LIST = 141;
 	public static final int MAZEWAR_QUIT     = 199;
     public static final int MAZEWAR_SPAWN = 120;
     public static final int MAZEWAR_TICK = 200;
@@ -53,10 +55,22 @@ public class MazeWarPkt implements Serializable {
     
     public ArrayList<ClientInfo> clientList;
 
+    public String serverAddr;
+    public int serverPort;
+
+    public ArrayList<String> peerHosts;
+    public ArrayList<Integer> peerPorts;
+
     public MazeWarPkt(int event, int player, String playerName) {
         this.event = event;
         this.player = player;
         this.playerName = playerName;
+    }
+
+    public MazeWarPkt(int event, String serverAddr, int serverPort) {
+        this.event = event;
+        this.serverAddr = serverAddr;
+        this.serverPort = serverPort;
     }
 
     public MazeWarPkt(int event, int player, String playerName, int spawnX, int spawnY, Direction spawnD) {
