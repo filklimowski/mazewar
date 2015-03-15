@@ -8,6 +8,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class MazeWarServer {
 	
@@ -15,8 +17,14 @@ public class MazeWarServer {
 	private ArrayList<ConnectionToClient> clientList;
     private ArrayList<ConnectionToPeer> peerList;
 	private ServerSocket serverSocket;
+    private Lock acceptLock;
+    int numConnections = 0;
+
+
 
 	public MazeWarServer(int port) {
+
+        acceptLock = new ReentrantLock();
 
         //Error checking?
 
@@ -31,6 +39,24 @@ public class MazeWarServer {
         }
         this.listen();
 
+    }
+
+    public MazeWarServer(int port, String hostname, int port2) {
+        acceptLock = new ReentrantLock();
+        Socket commPeer = null;
+        ObjectOutputStream out;
+        try {
+            commPeer = new Socket(hostname, port2);
+            out = new ObjectOutputStream(commPeer.getOutputStream());
+            serverSocket = new ServerSocket(port);
+            MazeWarPkt p = new MazeWarPkt(MazeWarPkt.MAZEWAR_REQ_PEERS, -1, "Server");
+            out.writeObject(p);
+
+        }
+        catch (IOException err) {
+            System.out.println("Exception occurred");
+        }
+        listen();
     }
 
     private void listen() {
@@ -56,16 +82,49 @@ public class MazeWarServer {
             public void run(){
                 while(true){
                     try{
+                        acceptLock.lock();
                         Socket s = serverSocket.accept();
                         System.out.println("Accepted connection\n");
-			
                         clientList.add(new ConnectionToClient(s));
+                        MazeWarServer.this.numConnections++;
+                    }
+                    catch(IOException e){ e.printStackTrace(); }
+                    finally {
+                        acceptLock.unlock();
+                    }
+                }
+            }
+        };
+        
+        accept.start();
+
+        while(true) {
+            acceptLock.lock();
+            if (numConnections > 0) {
+                acceptLock.unlock();
+                break;
+            }
+            else {
+                acceptLock.unlock();
+            }
+        }
+
+        Thread acceptPeers = new Thread() {
+            public void run(){
+                while(true){
+                    try{
+                        Socket s = serverSocket.accept();
+                        System.out.println("Accepted connection\n");
+                        peerList.add(new ConnectionToPeer(s));
+
+                        //TODO: get hostname and port of new peer to be stored in connection info
+                        MazeWarServer.this.numConnections++;
                     }
                     catch(IOException e){ e.printStackTrace(); }
                 }
             }
         };
-        
+
         accept.start();
 
         Thread broadcastMessages = new Thread() {
@@ -103,7 +162,7 @@ public class MazeWarServer {
                         }
                         else if(eventPkt.event == MazeWarPkt.MAZEWAR_PEER_LIST)
                         {
-                            //TODO: do something
+                            //TODO: build connection to all peers
                             System.out.println("Received Peer List");
                         }
                         else {
@@ -120,23 +179,6 @@ public class MazeWarServer {
         };
 
         broadcastMessages.start();
-    }
-
-    public MazeWarServer(int port, String hostname, int port2) {
-        Socket commPeer = null;
-        ObjectOutputStream out;
-        try {
-            commPeer = new Socket(hostname, port2);
-            out = new ObjectOutputStream(commPeer.getOutputStream());
-            serverSocket = new ServerSocket(port);
-            MazeWarPkt p = new MazeWarPkt(MazeWarPkt.MAZEWAR_REQ_PEERS, -1, "Server");
-            out.writeObject(p);
-
-        }
-        catch (IOException err) {
-            System.out.println("Exception occurred");
-        }
-        listen();
     }
 
     private class ConnectionToClient {
@@ -224,7 +266,7 @@ public class MazeWarServer {
         public int port;
 
 
-        ConnectionToPeer(Socket socket, String hostname, int port) throws IOException {
+        ConnectionToPeer(Socket socket) throws IOException {
 
             this.socket = socket;
             this.fromPeer = new ObjectInputStream(socket.getInputStream());
@@ -285,6 +327,11 @@ public class MazeWarServer {
     public void sendToAll(MazeWarPkt eventPkt){
         for(ConnectionToClient client : clientList)
             client.write(eventPkt);
+    }
+
+    public void sendToAllPeers(MazeWarPkt eventPkt) {
+        for(ConnectionToPeer peer:peerList)
+            peer.write(eventPkt);
     }
 
     public static void main(String args[]) {
